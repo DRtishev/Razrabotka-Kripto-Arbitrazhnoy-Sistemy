@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Arbitrage System Configuration",
+  "type": "object",
+  "properties": {
+    "strategies": {
+      "type": "object",
+      "properties": {
+        "cex_cex": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "max_slippage_bps": {"type": "number"},
+            "min_profit_usd": {"type": "number"}
+          },
+          "required": ["enabled"]
+        },
+        "dex_cex": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "max_gas_usd": {"type": "number"},
+            "slippage_tolerance": {"type": "number"}
+          },
+          "required": ["enabled"]
+        },
+        "dexdex": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "max_net_profit_bps": {"type": "number"}
+          },
+          "required": ["enabled"]
+        },
+        "futures": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "funding_threshold": {"type": "number"}
+          },
+          "required": ["enabled"]
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "properties": {
+        "max_position_usd": {"type": "number"},
+        "max_open_sagas": {"type": "integer"}
+      }
+    }
+  },
+  "required": ["strategies"]
+}
