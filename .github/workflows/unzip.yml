@@ -1,0 +1,45 @@
+name: Unpack ZIP and commit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'project (1).zip'
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install unzip & rsync
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip rsync
+
+      - name: Unpack project
+        run: |
+          set -e
+          ZIP='project (1).zip'
+          test -f "$ZIP"
+          rm -rf tmpdir && mkdir -p tmpdir
+          unzip -q -o "$ZIP" -d tmpdir
+          shopt -s dotglob
+          ROOT_SUBDIR=$(ls -1 tmpdir | head -n1)
+          if [ -d "tmpdir/$ROOT_SUBDIR" ]; then
+            rsync -a "tmpdir/$ROOT_SUBDIR"/ .
+          else
+            rsync -a tmpdir/ .
+          fi
+          rm -rf tmpdir
+          rm -f "$ZIP"
+
+      - name: Commit unpacked files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Unpack project from ZIP' || echo 'Nothing to commit'
+          git push
