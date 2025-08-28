@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  # Infrastructure services
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    ports:
+      - "9092:9092"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  # Core system services
+  orchestrator:
+    build:
+      context: ./services/orchestrator
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP:-kafka:9092}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      - kafka
+      - redis
+
+  executor_dex:
+    build:
+      context: ./services/executor_dex
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP:-kafka:9092}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - FLASHBOTS_RPC_URL=${FLASHBOTS_RPC_URL}
+      - ETH_PRIVATE_KEY=${ETH_PRIVATE_KEY}
+    depends_on:
+      - kafka
+      - redis
+
+  dex_connector:
+    build:
+      context: ./services/dex_connector
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP:-kafka:9092}
+      - CROSS_TO_CHAIN=${CROSS_TO_CHAIN:-}
+    depends_on:
+      - kafka
+
+  bridge_adapter:
+    build:
+      context: ./services/bridge_adapter
+    environment:
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP:-kafka:9092}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      - kafka
+      - redis
+
+  # Fusion+ gateway exposes 1inch Fusion API functionality via a local
+  # HTTP server.  It wraps the official @1inch/cross-chain-sdk and
+  # provides endpoints to fetch quotes, create intent orders and
+  # check their status.  The gateway operates in simulation mode
+  # unless a valid ONE_INCH_DEV_API_KEY is provided via the
+  # environment.  When disabled or unused the service has no side
+  # effects【369577708175767†L159-L177】.
+  fusion_gateway:
+    build:
+      context: ./services/fusion_gateway
+    environment:
+      - PORT=${FUSION_GATEWAY_PORT:-7070}
+      - ONE_INCH_DEV_API_KEY=${ONE_INCH_DEV_API_KEY}
+      - SRC_CHAIN_ID=${SRC_CHAIN_ID:-1}
+    ports:
+      - "${FUSION_GATEWAY_PORT:-7070}:7070"
