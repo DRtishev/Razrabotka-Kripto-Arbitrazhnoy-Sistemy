@@ -1,0 +1,26 @@
+{
+  "strategies": {
+    "cex_cex": {
+      "enabled": true,
+      "max_slippage_bps": 10,
+      "min_profit_usd": 1.0
+    },
+    "dex_cex": {
+      "enabled": true,
+      "max_gas_usd": 5.0,
+      "slippage_tolerance": 0.005
+    },
+    "dexdex": {
+      "enabled": false,
+      "max_net_profit_bps": 20
+    },
+    "futures": {
+      "enabled": false,
+      "funding_threshold": 0.0005
+    }
+  },
+  "risk": {
+    "max_position_usd": 1000,
+    "max_open_sagas": 5
+  }
+}
